@@ -107,11 +107,11 @@ struct Constraint {
     blue: u32,
 }
 
-fn check_color_enough(draw: &str, key: &str, max_amount: u32) -> bool {
+fn get_drawed_count(draw: &str, key: &str) -> u32 {
     let (amount_str, _) = draw
         .split_once((" ".to_string() + &key.to_string()).as_str())
         .unwrap();
-    let amount = amount_str
+    return amount_str
         .split(',')
         .last()
         .unwrap()
@@ -120,8 +120,9 @@ fn check_color_enough(draw: &str, key: &str, max_amount: u32) -> bool {
         .1
         .parse()
         .unwrap();
-    println!("{:?}", amount_str.split(',').last().unwrap());
-    println!("{:?} {:?} {:?}", key, max_amount, amount);
+}
+fn check_color_enough(draw: &str, key: &str, max_amount: u32) -> bool {
+    let amount = get_drawed_count(draw, key);
     return max_amount >= amount;
 }
 
@@ -147,6 +148,40 @@ fn parse_line(line: &str, constraint: &Constraint) -> Option<u32> {
     return Some(id);
 }
 
+fn get_power_of_min_set(line: &str) -> u32 {
+    let line_split = line.split_once(":");
+    if line_split.is_none() {
+        return 0;
+    }
+    let (_, draws) = line_split.unwrap();
+    let mut constraint = Constraint {
+        red: 0,
+        green: 0,
+        blue: 0,
+    };
+    for draw in draws.split(";").collect::<Vec<_>>() {
+        if draw.contains("red") {
+            let red_count = get_drawed_count(draw, "red");
+            if red_count > constraint.red {
+                constraint.red = red_count;
+            }
+        }
+        if draw.contains("blue") {
+            let blue_count = get_drawed_count(draw, "blue");
+            if blue_count > constraint.blue {
+                constraint.blue = blue_count;
+            }
+        }
+        if draw.contains("green") {
+            let green_count = get_drawed_count(draw, "green");
+            if green_count > constraint.green {
+                constraint.green = green_count;
+            }
+        }
+    }
+    return constraint.red * constraint.green * constraint.blue;
+}
+
 fn main() {
     let constraint = Constraint {
         red: 12,
@@ -157,5 +192,12 @@ fn main() {
         .lines()
         .flat_map(|x| parse_line(x, &constraint))
         .fold(0, |sum: u32, count| sum + count);
-    println!("{:?}", count);
+    println!("count {:?}", count);
+
+    let power_sum = get_inputs()
+        .lines()
+        .map(|x| get_power_of_min_set(x))
+        .fold(0, |sum: u32, count| sum + count);
+
+    println!("sum of the power of these sets {:?}", power_sum)
 }
