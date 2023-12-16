@@ -3,25 +3,11 @@ use std::{collections::HashMap, str::FromStr};
 use anyhow::{anyhow, Error, Ok};
 
 fn get_inputs() -> &'static str {
-    return "2345A 1
-Q2KJJ 13
-Q2Q2Q 19
-T3T3J 17
-T3Q33 11
-2345J 3
-J345A 2
-32T3K 5
-T55J5 29
-KK677 7
-KTJJT 34
-QQQJA 31
-JJJJJ 37
-JAAAA 43
-AAAAJ 59
-AAAAA 61
-2AAAA 23
-2JJJJ 53
-JJJJ2 41";
+    return "32T3K 765
+T55J5 684
+KK677 28
+KTJJT 220
+QQQJA 483";
 }
 
 trait Compare {
@@ -46,7 +32,7 @@ impl From<char> for Card {
                     'A' => 14,
                     'K' => 13,
                     'Q' => 12,
-                    'J' => 11,
+                    'J' => 1,
                     'T' => 10,
                     _ => 15,
                 };
@@ -78,6 +64,7 @@ enum HandType {
 
 impl From<&[Card; 5]> for HandType {
     fn from(cards: &[Card; 5]) -> Self {
+        let mut joker_count: usize = 0;
         let mut count_map: HashMap<&String, usize> = HashMap::new();
         for card in cards {
             if count_map.get(&card.label).is_some() {
@@ -85,23 +72,35 @@ impl From<&[Card; 5]> for HandType {
             } else {
                 count_map.insert(&card.label, 1);
             }
+            if card.label == "J" {
+                joker_count += 1;
+            }
         }
-        let mut counts = count_map.iter().map(|(_, count)| count).collect::<Vec<_>>();
+        let mut counts = count_map
+            .iter()
+            .map(|(_, count)| *count)
+            .collect::<Vec<_>>();
         counts.sort_by(|a, b| b.partial_cmp(a).unwrap());
-        if *counts[0] == 5 {
+        if counts[0] != joker_count {
+            counts[0] += joker_count;
+        } else if counts.len() > 1 {
+            counts[1] += joker_count;
+            counts.swap(0, 1);
+        }
+        if counts[0] == 5 {
             return HandType::FiveOfAKind;
         }
-        if *counts[0] == 4 {
+        if counts[0] == 4 {
             return HandType::FourOfAKind;
         }
-        if *counts[0] == 3 {
-            if *counts[1] == 2 {
+        if counts[0] == 3 {
+            if counts[1] == 2 && joker_count != 2 {
                 return HandType::FullHouse;
             }
             return HandType::ThreeOfAKind;
         }
-        if *counts[0] == 2 {
-            if *counts[1] == 2 {
+        if counts[0] == 2 {
+            if counts[1] == 2 {
                 return HandType::TwoPair;
             }
             return HandType::OnePair;
@@ -215,6 +214,9 @@ fn main() {
         .flat_map(|line| Hand::from_str(line))
         .collect::<Vec<_>>();
     let sorted = sort_hands(&mut hands);
+    // for hand in sorted {
+    //     println!("{:?}", hand);
+    // }
     let count = sorted
         .iter()
         .enumerate()
