@@ -57,17 +57,47 @@ impl Sequence {
         for row_index in 0..len {
             let cloned_self = self.clone();
             let row = &mut self.value[len - 1 - row_index];
-            row.push(cloned_self.get_row_next(len - 1 - row_index));
+            row.push(cloned_self.get_row_prev(len - 1 - row_index));
         }
         println!("self: {:?}", self.value);
         return *self.value[0].last().unwrap();
     }
+    fn get_row_prev(self: &Self, row_index: usize) -> i32 {
+        let len = self.value.len();
+        match row_index + 1 == len {
+            true => *self.value.get(row_index).unwrap().get(0).unwrap(),
+            false => {
+                let row = self.value.get(row_index).unwrap();
+                let prev_row = self.value.get(row_index + 1).unwrap();
+                let last_value_of_prev_row = prev_row.get(0).unwrap();
+
+                *row.get(0).unwrap() - *last_value_of_prev_row
+            }
+        }
+    }
+    fn get_prev(self: &mut Self) -> i32 {
+        let len = self.value.len();
+        for row_index in 0..len {
+            let cloned_self = self.clone();
+            let row = &mut self.value[len - 1 - row_index];
+            row.insert(0, cloned_self.get_row_prev(len - 1 - row_index));
+        }
+        println!("self: {:?}", self.value);
+        return *self.value[0].first().unwrap();
+    }
 }
 
 fn main() {
-    let sum = get_inputs()
+    // let sum: i32 = get_inputs()
+    //     .lines()
+    //     .map(|x| Sequence::from(x).get_next())
+    //     .fold(0, |sum, count| sum + count);
+
+    // println!("sum: {:?}", sum);
+
+    let sum: i32 = get_inputs()
         .lines()
-        .map(|x| Sequence::from(x).get_next())
+        .map(|x| Sequence::from(x).get_prev())
         .fold(0, |sum, count| sum + count);
 
     println!("sum: {:?}", sum);
